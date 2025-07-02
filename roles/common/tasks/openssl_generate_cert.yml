@@ -1,0 +1,26 @@
+---
+- name: Ensure certs directory exists
+  file:
+    path: "{{ ssl_dir }}"
+    state: directory
+    mode: "{{ ssl_mode }}"
+    owner: "{{ ssl_owner }}"
+    group: "{{ ssl_group }}"
+
+- name: Generate an OpenSSL private key
+  command: >
+    openssl genrsa -out {{ ssl_dir }}/{{ ssl_key }} {{ ssl_key_length }}
+  args:
+    creates: "{{ ssl_dir }}/{{ ssl_key }}"
+
+- name: Generate an OpenSSL Certificate Signing Request
+  command: >
+    openssl req -new -key {{ ssl_dir }}/{{ ssl_key }} -out {{ ssl_dir }}/{{ ssl_csr }} -subj "/CN={{ ssl_common_name }}"
+  args:
+    creates: "{{ ssl_dir }}/{{ ssl_csr }}"
+
+- name: Generate a self-signed SSL certificate
+  command: >
+    openssl x509 -req -days {{ ssl_days_valid }} -in {{ ssl_dir }}/{{ ssl_csr }} -signkey {{ ssl_dir }}/{{ ssl_key }} -out {{ ssl_dir }}/{{ ssl_crt }}
+  args:
+    creates: "{{ ssl_dir }}/{{ ssl_crt }}"

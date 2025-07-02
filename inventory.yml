@@ -1,0 +1,9 @@
+all:
+  children:
+    vm_group:
+      hosts:
+        docker_nginx:
+          ansible_host: 192.168.110.12
+
+        docker_pgadmin_postgres:
+          ansible_host: 192.168.110.13

@@ -1,0 +1,18 @@
+---
+- name: docker_nginx
+  hosts: docker_nginx
+  become: true
+  vars_files:
+    - secrets.yml
+  roles:
+    - role: docker_nginx
+      when: docker_nginx_enabled | default(false)
+
+- name: docker_pgadmin_postgres
+  hosts: docker_pgadmin_postgres
+  become: true
+  vars_files:
+    - secrets.yml
+  roles:
+    - role: docker_pgadmin_postgres
+      when: docker_pgadmin_postgres_enabled | default(false)

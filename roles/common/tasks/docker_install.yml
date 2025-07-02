@@ -1,0 +1,54 @@
+---
+- name: Install required packages #возможны отличия в именах пакетов в зависимости от дистра
+  package:
+    name:
+      - ca-certificates
+      - curl
+    state: present
+
+- name: Create /etc/apt/keyrings directory
+  file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: "0755"
+
+- name: Download Docker GPG key
+  get_url:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    dest: /etc/apt/keyrings/docker.asc
+    mode: "0644"
+
+- name: Add Docker APT repository
+  copy:
+    dest: /etc/apt/sources.list.d/docker.list
+    content: |
+      deb [arch={{ ansible_architecture | replace('x86_64', 'amd64') }} signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu {{ ansible_lsb.codename }} stable
+    mode: "0644"
+
+- name: Update apt cache after adding Docker repo
+  apt:
+    update_cache: yes
+
+- name: Install Docker packages # нужно сделать версионирование
+  apt:
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-buildx-plugin
+      - docker-compose-plugin
+    state: present
+
+- name: Add user to docker group
+  user:
+    name: "{{ ansible_user | default('vagrant') }}"
+    groups: docker
+    append: true
+
+- name: Check if new group 'docker' is active
+  shell: groups
+  register: user_groups
+
+- name: Debug current groups (for info)
+  debug:
+    var: user_groups.stdout

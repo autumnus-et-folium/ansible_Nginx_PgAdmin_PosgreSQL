@@ -1,0 +1,67 @@
+---
+- name: Ensure apt cache is up to date
+  apt:
+    update_cache: true
+
+- name: openssl_generate_cert
+  import_tasks: ../common/tasks/openssl_generate_cert.yml
+  when: openssl_generate_cert | default(false)
+
+- name: Add Custom Host
+  import_tasks: ../common/tasks/hosts.yml
+  when: add_custom_host | default(false)
+
+- name: Install Docker
+  import_tasks: ../common/tasks/docker_install.yml
+  when: install_docker | default(false)
+
+- name: Ensure docker compose project directory exists
+  file:
+    path: "{{ docker_compose_project_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Ensure nginx config directory exists
+  file:
+    path: "{{ docker_compose_project_dir }}/nginx"
+    state: directory
+    mode: "0755"
+
+- name: Ensure nginx config directory exists
+  file:
+    path: "{{ docker_compose_project_dir }}/nginx/conf.d"
+    state: directory
+    mode: "0755"
+
+- name: Copy main nginx.conf
+  template:
+    src: nginx/nginx.conf
+    dest: "{{ docker_compose_project_dir }}/nginx/nginx.conf"
+    mode: "0644"
+  notify: Restart docker-compose stack
+
+- name: Copy nginx default.conf to conf.d
+  template:
+    src: nginx/conf.d/default.conf
+    dest: "{{ docker_compose_project_dir }}/nginx/conf.d/default.conf"
+    mode: "0644"
+  notify: Restart nginx container
+
+- name: Deploy docker-compose.yml
+  template:
+    src: docker-compose.yml.j2
+    dest: "{{ docker_compose_project_dir }}/docker-compose.yml"
+    mode: "0644"
+  notify: Restart docker-compose stack
+
+# Проверяем что Docker Compose доступен
+- name: Check docker compose availability
+  command: docker compose version
+  register: docker_compose_version
+  failed_when: false
+  changed_when: false
+
+- name: Fail if docker compose is not available
+  fail:
+    msg: "Docker Compose is not available"
+  when: docker_compose_version.rc != 0

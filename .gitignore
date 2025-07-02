@@ -1,0 +1,3 @@
+.vagrant/
+venv/
+vault_pass.txt
